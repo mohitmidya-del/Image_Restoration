@@ -1,0 +1,6 @@
+[client]
+# Show native Streamlit top navbar (App logo, Menu, Run buttons).
+# Use "experimental" for a floating compact toolbar.
+# Use "hidden" to hide completely.
+
+toolbarMode = minimal"
