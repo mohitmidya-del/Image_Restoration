@@ -32,6 +32,17 @@ def unsharp_mask(
 
 def detect_edges_laplacian(image: np.ndarray) -> np.ndarray:
     """
+    Extracts edge details using the Laplacian operator and normalizes contrast
+    so fine facial and texture edges are clearly visible in Stage 5.
+    """
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+    # Light Gaussian smoothing prevents grain from drowning out true edges
+    smooth = cv2.GaussianBlur(gray, (3, 3), 0)
+    laplacian = np.abs(cv2.Laplacian(smooth, cv2.CV_64F))
+    # Stretch intensity so edges stand out clearly instead of looking near-black
+    normalized = cv2.normalize(laplacian, None, 0, 255, cv2.NORM_MINMAX)
+    return normalized.astype(np.uint8)
+    """
     Extracts edge details using the Laplacian operator (useful for intermediate
     edge visualization in Chapter 5 of the project report).
     """

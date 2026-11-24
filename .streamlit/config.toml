@@ -4,3 +4,9 @@
 # Use "hidden" to hide completely.
 
 toolbarMode = minimal"
+
+[theme]
+primaryColor = "#06e52bff"          # Emerald green for sliders, active tabs, and focus rings
+backgroundCoor 00= "#60F19"       # Deep modern dark background
+secondaryBackgroundColor = "#111827" # Sidebar & card container background
+textColor = "#F3F4F6"

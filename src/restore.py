@@ -46,17 +46,31 @@ def inpaint_scratches(
 def restore_damage(
     image: np.ndarray,
     kernel_size: int = 9,
-    threshold_val: int = 45,
+    threshold_val: int = 22,
     inpaint_radius: int = 3,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Complete structural restoration step:
-    1. Detects scratches into a binary mask (saved for intermediate report visuals).
-    2. Inpaints the detected scratches.
-    Returns both (restored_image, scratch_mask).
+    Detects both bright scratches (Top-Hat) and dark cracks/spots (Black-Hat),
+    filters out tiny noise blobs, and inpaints damaged regions using Telea's algorithm.
     """
-    mask = detect_scratches(
-        image, kernel_size=kernel_size, threshold_val=threshold_val
-    )
-    restored = inpaint_scratches(image, mask, inpaint_radius=inpaint_radius)
-    return restored, mask
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Structuring element for thin linear scratches and spots
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+
+    # Top-Hat isolates bright white scratches; Black-Hat isolates dark cracks/spots
+    tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, kernel)
+    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, kernel)
+    combined_defects = cv2.add(tophat, blackhat)
+
+    # Threshold to create binary mask (lower default threshold catches faint vintage creases)
+    _, mask = cv2.threshold(combined_defects, threshold_val, 255, cv2.THRESH_BINARY)
+
+    # Clean isolated single-pixel sensor noise while keeping real scratches/spots
+    clean_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, clean_kernel)
+    mask = cv2.dilate(mask, clean_kernel, iterations=1)
+
+    # Telea inpainting fills masked pixels from surrounding neighborhood
+    inpainted = cv2.inpaint(image, mask, inpaintRadius=inpaint_radius, flags=cv2.INPAINT_TELEA)
+    return inpainted, mask
